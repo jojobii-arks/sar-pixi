@@ -7,13 +7,9 @@ export default class HelloWorld extends React.Component {
   constructor(props) {
     super(props);
     this.mount = React.createRef();
-    this.handleClick = this.handleClick.bind(this);
     this.state = {
       imageSrc: ''
     };
-  }
-
-  handleClick() {
   }
 
   componentDidMount() {
@@ -21,7 +17,7 @@ export default class HelloWorld extends React.Component {
       width: 760,
       height: 380,
       antialias: true,
-      clearBeforeRender: true,
+      preserveDrawingBuffer: true,
       autoDensity: true,
       backgroundAlpha: 0
     });
@@ -31,7 +27,8 @@ export default class HelloWorld extends React.Component {
     this.app.loader
       .add('spritesheet', '../spritesheet.json')
       .load(() => {
-        this.app.stage.removeChildren(0);
+        const container = new PIXI.Container();
+        this.app.stage.addChild(container);
 
         const spritesheet = this.app.loader.resources.spritesheet;
 
@@ -79,17 +76,27 @@ export default class HelloWorld extends React.Component {
           sprite.alpha = trueAlpha;
           sprite.proj.mapSprite(sprite, corners);
 
-          this.app.stage.addChild(sprite);
+          container.addChild(sprite);
         }
-        console.dir(this.app.renderer.plugins.extract.base64(this.app.stage));
-        this.mount.current.appendChild(this.app.view);
+        // this.mount.current.appendChild(this.app.view);
+        this.app.renderer.addListener('postrender', () => {
+          this.setState({ imageSrc: this.app.view.toDataURL() });
+          this.app.stop();
+        });
       });
+  }
+
+  componentWillUnmount() {
+    PIXI.utils.destroyTextureCache();
+    this.app.destroy();
   }
 
   render() {
     return (
       <>
-        <div ref={this.mount} onClick={this.handleClick}></div>
+        {/* <div ref={this.mount} onClick={this.handleClick}></div> */}
+        <h1>{this.props.sar.name}</h1>
+        <h2>{this.props.sar.layerCount} layers</h2>
         <img src={this.state.imageSrc} />
       </>
     );
