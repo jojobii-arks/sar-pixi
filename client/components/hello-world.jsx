@@ -3,36 +3,29 @@ import * as PIXI from 'pixi.js';
 import { Sprite2d } from 'pixi-projection';
 import convertRGBtoHex from '../lib/rgb-to-hex';
 
-export default class HelloWorld extends React.Component {
-  constructor(props) {
-    super(props);
-    this.mount = React.createRef();
-    this.state = {
-      imageSrc: ''
-    };
-  }
-
-  componentDidMount() {
-    this.app = new PIXI.Application({
+function renderSar(sar) {
+  const promise = new Promise((resolve, reject) => {
+    const app = new PIXI.Application({
       width: 760,
       height: 380,
       antialias: true,
       preserveDrawingBuffer: true,
       autoDensity: true,
-      backgroundAlpha: 0
+      backgroundAlpha: 0,
+      clearBeforeRender: true
     });
 
     const resolution = 4;
 
-    this.app.loader
+    app.loader
       .add('spritesheet', '../spritesheet.json')
       .load(() => {
         const container = new PIXI.Container();
-        this.app.stage.addChild(container);
+        app.stage.addChild(container);
 
-        const spritesheet = this.app.loader.resources.spritesheet;
+        const spritesheet = app.loader.resources.spritesheet;
 
-        const layers = this.props.sar.layers.reverse();
+        const layers = [...sar.layers].reverse();
 
         const offsetX = -126;
         const offsetY = -317;
@@ -78,17 +71,34 @@ export default class HelloWorld extends React.Component {
 
           container.addChild(sprite);
         }
-        // this.mount.current.appendChild(this.app.view);
-        this.app.renderer.addListener('postrender', () => {
-          this.setState({ imageSrc: this.app.view.toDataURL() });
-          this.app.stop();
+        app.renderer.addListener('postrender', () => {
+          resolve(app.view.toDataURL());
+          app.destroy();
         });
+
       });
+
+  });
+
+  return promise;
+}
+
+export default class HelloWorld extends React.Component {
+  constructor(props) {
+    super(props);
+    this.mount = React.createRef();
+    this.state = {
+      imageSrc: ''
+    };
+  }
+
+  componentDidMount() {
+    renderSar(this.props.sar)
+      .then(pngBase64 => { this.setState({ imageSrc: pngBase64 }); });
   }
 
   componentWillUnmount() {
     PIXI.utils.destroyTextureCache();
-    this.app.destroy();
   }
 
   render() {

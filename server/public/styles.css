@@ -7,4 +7,6 @@
 
 img {
   border-radius: 16px;
+  aspect-ratio: 2/1;
+  max-width: 100vw;
 }
